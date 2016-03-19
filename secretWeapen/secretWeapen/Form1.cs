@@ -2,6 +2,7 @@
 using System.IO;
 using System.Net;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace secretWeapen
@@ -24,7 +25,11 @@ namespace secretWeapen
 
         private const string TOR_MAIN = "";
 
-        private const string BTD_MAIN = "";
+        private const string BTD_MAIN = "http://51buyebook.com:9999/search?info_hash=&q=";
+        private const string BTD_GET_TR = @"(?<=(this.href)"" href="").*?(?="")";
+        private const string BTD_GET_FILE_NAME = "";
+        private const string BTD_GET_FILE_SIZE = "";
+        private const string BTD_GET_MAGNET = "";
 
         private void btn_search_Click(object sender, EventArgs e)
         {
@@ -40,6 +45,7 @@ namespace secretWeapen
             {
                 txt_result.Clear();
                 string keyword = txt_input.Text.ToString();
+
                 if (rdo_bts.Checked == true)
                 {
                     string searchLink = BTS_MAIN + keyword;
@@ -51,7 +57,13 @@ namespace secretWeapen
                     
                 }else if (rdo_btd.Checked == true)
                 {
-
+                    string url = BTD_MAIN + keyword;
+                    string strHtml = getHtmlCode(url);
+                    MatchCollection mc = Regex.Matches(strHtml, BTD_GET_TR);
+                    for(int i = 0; i < mc.Count; i++)
+                    {
+                        txt_result.AppendText("magnet:?xt=urn:btih:" + mc[i].ToString() + Environment.NewLine + Environment.NewLine);
+                    }
                 }
             }
         }
@@ -61,7 +73,7 @@ namespace secretWeapen
         {
             for(int i = 0; i < results.Length; i++)
             {
-                txt_result.AppendText(results[i] + Environment.NewLine + Environment.NewLine);
+                txt_result.AppendText(results[i] + Environment.NewLine);
             }
         }
 
@@ -80,25 +92,19 @@ namespace secretWeapen
         //获取Btspread和TorrentKitty的搜索结果
         private string [] getResults(string[] hashLinks,string REG_FILE_NAME,string REG_FILE_SIZE,string REG_MAGNET)
         {
+            int i = 0;
             string[] results = new string[hashLinks.Length];
-            string htmlCode = getHtmlCode(hashLinks[0]);
-            Match filename = Regex.Match(htmlCode, REG_FILE_NAME);
-            Match filesize = Regex.Match(htmlCode, REG_FILE_SIZE);
-            Match magnet = Regex.Match(htmlCode, REG_MAGNET);
-            results[0] = "FileName:" + filename.ToString() + Environment.NewLine + "FileSize:" + filesize.ToString() + Environment.NewLine + "MagnetLink:" + magnet.ToString();
-            return results;
-            /*
-            string[] results = new string[hashLinks.Length];
-            for(int i = 0; i < hashLinks.Length; i++)
+            Parallel.For(0, hashLinks.Length,(item) =>
             {
                 string htmlCode = getHtmlCode(hashLinks[i]);
                 Match filename = Regex.Match(htmlCode, REG_FILE_NAME);
                 Match filesize = Regex.Match(htmlCode, REG_FILE_SIZE);
                 Match magnet = Regex.Match(htmlCode, REG_MAGNET);
-                results[i] = filename.ToString() + "--------" + filesize.ToString() + "--------" + Environment.NewLine + magnet.ToString();
-            }
+                results[i] = "FileName:" + filename.ToString() + Environment.NewLine + "FileSize:" + filesize.ToString() + Environment.NewLine + "MagnetLink:" + Environment.NewLine + magnet.ToString() + Environment.NewLine;
+                i++;
+            });
             return results;
-            */
+            
         }
 
 
